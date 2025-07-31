@@ -20,10 +20,13 @@ GPT-Friendly Codebase Exporter & Summarizer for LLM Prompt Building
 
 ### 1. Direct Usage (Linux)
 ```bash
-wget https://github.com/Harri200191/gptree-cli/releases/download/v1.1/gptree-cli.deb
+wget https://github.com/Harri200191/gptree-cli/releases/download/<version>/gptree_<architecture>.deb
 sudo dpkg -i gptree-cli.deb
 gtree --help
 ```
+Note: Choose architecture from: arm, arm64, amd64, x86_64, aarch64
+
+Note: Choose release version from those available e.g. v1.0, v1.1 ...
 
 ### 2. Clone and Build
 ```bash
