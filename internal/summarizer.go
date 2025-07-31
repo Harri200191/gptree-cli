@@ -39,7 +39,7 @@ func GenerateReadmeFromSummary(summary, model, apiKey string) (string, error) {
 }
 
 
-func SummarizeFiles(root string, ignore []string, model string) (string, error) {
+func SummarizeFiles(root string, ignoreDirs []string, ignoreFiles []string, model string) (string, error) {
     godotenv.Load()
 
     apiKey := os.Getenv("OPENAI_API_KEY")
@@ -47,7 +47,7 @@ func SummarizeFiles(root string, ignore []string, model string) (string, error) 
         return "", fmt.Errorf("OPENAI_API_KEY not set in environment")
     }
 
-    files, err := WalkDir(root, ignore)
+    files, err := WalkDir(root, ignoreDirs, ignoreFiles)
     if err != nil {
         return "", err
     }

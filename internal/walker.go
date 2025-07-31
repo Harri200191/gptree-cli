@@ -1,35 +1,45 @@
 package internal
 
 import (
-    "io/fs"
-    "path/filepath"
-    "strings"
+	"os"
+	"path/filepath"
 )
 
-func WalkDir(root string, ignore []string) ([]string, error) {
-    var files []string
-    ignoreSet := make(map[string]struct{})
+// WalkDir walks the tree rooted at root, skipping any dirs whose
+// base name matches ignoreDirs, and skipping any files matching ignoreFileGlobs.
+func WalkDir(root string, ignoreDirs []string, ignoreFileGlobs []string) ([]string, error) {
+	var files []string
 
-    for _, dir := range ignore {
-        ignoreSet[filepath.Join(root, dir)] = struct{}{}
-    }
+	// Build a set of directory names to ignore
+	ignoreDirSet := make(map[string]struct{}, len(ignoreDirs))
+	for _, d := range ignoreDirs {
+		ignoreDirSet[d] = struct{}{}
+	}
 
-    err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-        if err != nil {
-            return err
-        }
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 
-        for ignored := range ignoreSet {
-            if strings.HasPrefix(path, ignored) {
-                return nil
-            }
-        }
+		// If this is a directory and its name is in ignoreDirSet, skip it
+		if d.IsDir() {
+			if _, skip := ignoreDirSet[d.Name()]; skip {
+				return filepath.SkipDir
+			}
+			return nil
+		}
 
-        if !d.IsDir() && filepath.Ext(path) != "" {
-            files = append(files, path)
-        }
-        return nil
-    })
+		// Otherwise, it’s a file—skip if its base matches any ignoreFileGlobs
+		base := filepath.Base(path)
+		for _, pattern := range ignoreFileGlobs {
+			ok, _ := filepath.Match(pattern, base)
+			if ok {
+				return nil
+			}
+		}
 
-    return files, err
+		files = append(files, path)
+		return nil
+	})
+	return files, err
 }

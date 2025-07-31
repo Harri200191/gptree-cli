@@ -15,6 +15,7 @@ var (
 	summarize      bool
 	model          string
 	showTree       bool
+	ignoreFiles []string
 )
 
 var rootCmd = &cobra.Command{
@@ -34,7 +35,10 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		prompt, err := internal.BuildPrompt(args[0], ignoreDirs, 3096, true)
+		prompt, err := internal.BuildPrompt(args[0], ignoreDirs, 4096, true, ignoreFiles)
+		fmt.Println(prompt)
+		return
+
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return
@@ -47,7 +51,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if generateReadme {
-			summary, err := internal.SummarizeFiles(args[0], ignoreDirs, model)
+			summary, err := internal.SummarizeFiles(args[0], ignoreDirs, ignoreFiles, model)
 			if err != nil {
 				fmt.Println("Error during summarization for README:", err)
 				return
@@ -67,7 +71,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if summarize {
-			result, err := internal.SummarizeFiles(args[0], ignoreDirs, model)
+			result, err := internal.SummarizeFiles(args[0], ignoreDirs, ignoreFiles, model)
 			if err != nil {
 				fmt.Println("Error summarizing files:", err)
 				return
@@ -87,7 +91,8 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.PersistentFlags().StringSliceVarP(&ignoreDirs, "ignore", "i", []string{}, "Directories to ignore")
+	rootCmd.PersistentFlags().StringSliceVarP(&ignoreDirs, "ignore-dirs", "i", []string{}, "Directories to ignore")
+	rootCmd.PersistentFlags().StringSliceVar(&ignoreFiles, "ignore-files", []string{}, "File patterns to ignore (e.g. *.env, *.csv, gptree)")
 	rootCmd.PersistentFlags().StringVarP(&outputFile, "out", "o", "", "Output file")
 	rootCmd.PersistentFlags().BoolVar(&generateReadme, "readme", false, "Generate a README.md with summary of project files")
 	rootCmd.PersistentFlags().BoolVar(&summarize, "summarize", false, "Use GPT API to summarize file contents")

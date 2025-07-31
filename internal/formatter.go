@@ -3,34 +3,37 @@ package internal
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-func BuildPrompt(root string, ignore []string, maxTokens int, chunk bool) (string, error) {
-	files, err := WalkDir(root, ignore)
+var tokenThreshold = 100 // soft buffer before hitting max
+
+func BuildPrompt(root string, ignoreDirs []string, maxTokens int, chunk bool, ignoreFiles []string) (string, error) {
+	files, err := WalkDir(root, ignoreDirs, ignoreFiles)
+	
 	if err != nil {
 		return "", err
 	}
 
+	filtered := FilterFiles(files, ignoreFiles)
+
 	if chunk {
-		return buildChunkedPrompt(root, files, maxTokens)
+		return buildChunkedPrompt(filtered, maxTokens)
 	}
 
-	// Single prompt version
 	var prompt strings.Builder
-	for _, file := range files {
-		contentBytes, err := os.ReadFile(file)
+	for _, file := range filtered {
+		content, err := readSanitizedFile(file)
 		if err != nil {
 			continue
 		}
-		content := string(contentBytes)
 
 		prompt.WriteString(fmt.Sprintf("\n########## %s ##########\n", file))
 		prompt.WriteString(content)
 		prompt.WriteString("\n")
 
-
-		if EstimateTokens(prompt.String()) > maxTokens {
+		if EstimateTokens(prompt.String()) >= maxTokens-tokenThreshold {
 			break
 		}
 	}
@@ -38,72 +41,78 @@ func BuildPrompt(root string, ignore []string, maxTokens int, chunk bool) (strin
 	return prompt.String(), nil
 }
 
-
-func GenerateReadme(root string, ignore []string) (string, error) {
-	files, err := WalkDir(root, ignore)
-	if err != nil {
-		return "", err
-	}
-
-	var readme strings.Builder
-	readme.WriteString("# Project Overview\n\n")
-	readme.WriteString("This project contains the following key files:\n\n")
-
-	for _, file := range files {
-		readme.WriteString(fmt.Sprintf("- `%s`: _Brief description here_\n", file))
-	}
-
-	readme.WriteString("\n> NOTE: Replace file descriptions with meaningful explanations.")
-
-	return readme.String(), nil
-}
-
-func buildChunkedPrompt(root string, files []string, maxTokens int) (string, error) {
+func buildChunkedPrompt(files []string, maxTokens int) (string, error) {
 	var current strings.Builder
 	chunkIndex := 1
 	tokenCount := 0
 
 	for _, file := range files {
-		contentBytes, err := os.ReadFile(file)
+		content, err := readSanitizedFile(file)
 		if err != nil {
 			continue
 		}
-		content := string(contentBytes)
 
-		var entry string
-		entry = fmt.Sprintf("\n########## %s ##########\n%s\n", file, content)
+		entry := fmt.Sprintf("\n########## %s ##########\n%s\n", file, content)
+		newTokens := EstimateTokens(entry)
 
-
-		newTokenCount := EstimateTokens(entry)
-		if tokenCount+newTokenCount > maxTokens {
-			// Write the current chunk to file
-			filename := fmt.Sprintf("prompt_part_%d.txt", chunkIndex)
-			err := WriteToFile(filename, current.String())
+		if tokenCount+newTokens >= maxTokens-tokenThreshold {
+			err := WriteToFile(fmt.Sprintf("prompt_part_%d.txt", chunkIndex), current.String())
 			if err != nil {
 				return "", err
 			}
+			fmt.Println("Written: prompt_part_", chunkIndex)
 
-			fmt.Println("Written:", filename)
-
-			// Reset for next chunk
 			chunkIndex++
 			current.Reset()
 			tokenCount = 0
 		}
 
 		current.WriteString(entry)
-		tokenCount += newTokenCount
+		tokenCount += newTokens
 	}
 
-	// Write the final remaining chunk
 	if current.Len() > 0 {
-		filename := fmt.Sprintf("prompt_part_%d.txt", chunkIndex)
-		err := WriteToFile(filename, current.String())
+		err := WriteToFile(fmt.Sprintf("prompt_part_%d.txt", chunkIndex), current.String())
 		if err != nil {
 			return "", err
 		}
-		fmt.Println("Written:", filename)
+		fmt.Println("Written: prompt_part_", chunkIndex)
 	}
 
 	return fmt.Sprintf("%d prompt chunks written.", chunkIndex), nil
+}
+
+func readSanitizedFile(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	content := string(data)
+	// Replace tabs and newlines
+	content = strings.ReplaceAll(content, "\t", "\\t")
+	content = strings.ReplaceAll(content, "\n", "\\n")
+	return content, nil
+}
+
+func FilterFiles(files []string, ignorePatterns []string) []string {
+	var filtered []string
+
+	for _, file := range files {
+		base := filepath.Base(file)
+		skip := false
+
+		for _, pattern := range ignorePatterns {
+			match, _ := filepath.Match(pattern, base)
+			if match {
+				skip = true
+				break
+			}
+		}
+
+		if !skip {
+			filtered = append(filtered, file)
+		}
+	}
+
+	return filtered
 }
