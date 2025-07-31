@@ -1,45 +1,61 @@
-name: Release gptree CLI
+name: Release GPTree CLI
 
 on:
   push:
     tags:
-      - 'v*'
-    branches:
-      - main
+      - 'v*'  # Triggers on version tag like v1.0.0
 
 jobs:
   build:
-    name: Build Binaries
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ubuntu-latest
+    name: Build CLI & .deb Package
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v4
         with:
           go-version: '1.22'
 
-      - name: Build Binary
-        run: |
-          mkdir -p build
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            go build -o build/gptree.exe
-          else
-            go build -o build/gptree
-          fi
-        shell: bash
+      - name: Create build directory
+        run: mkdir -p build
 
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2
-        with:
-          name: ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
-          files: |
-            build/gptree*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Linux Binary
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o build/gptree
+
+      - name: Build Windows Binary
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o build/gptree.exe
+
+      - name: Create .deb folder structure
+        run: |
+          mkdir -p gptree-cli/DEBIAN
+          mkdir -p gptree-cli/usr/local/bin
+          cp build/gptree gptree-cli/usr/local/bin/gptree
+          chmod 755 gptree-cli/usr/local/bin/gptree
+          echo "Package: gptree-cli
+            Version: 1.0.0
+            Section: utils
+            Priority: optional
+            Architecture: amd64
+            Maintainer: Haris Rehman <harisrehmanchugtai@gmail.com>
+            Description: GPTree - CLI tool to format directory structures and LLM-ready prompts" > gptree-cli/DEBIAN/control
+                    chmod 755 gptree-cli/DEBIAN
+
+                - name: Build .deb package
+                    run: dpkg-deb --build gptree-cli build/gptree-cli.deb
+
+                - name: Upload to GitHub Release
+                    uses: softprops/action-gh-release@v1
+                    with:
+                    name: Version ${{ github.ref_name }}
+                    tag_name: ${{ github.ref_name }}
+                    files: |
+                        build/gptree
+                        build/gptree.exe
+                        build/gptree-cli.deb
+                    env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
