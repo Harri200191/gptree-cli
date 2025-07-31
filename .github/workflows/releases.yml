@@ -1,0 +1,45 @@
+name: Release gptree CLI
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Binary
+        run: |
+          mkdir -p build
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            go build -o build/gptree.exe
+          else
+            go build -o build/gptree
+          fi
+        shell: bash
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: |
+            build/gptree*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
