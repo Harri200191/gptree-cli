@@ -36,3 +36,6 @@ go.work.sum
 *.txt
 gptree
 .build
+usr
+DEBIAN
+*.deb
