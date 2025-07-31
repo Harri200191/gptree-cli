@@ -18,14 +18,21 @@ GPT-Friendly Codebase Exporter & Summarizer for LLM Prompt Building
 
 ## Installation
 
-### 1. Clone and Build
+### 1. Direct Usage (Linux)
+```bash
+wget https://github.com/Harri200191/gptree-cli/releases/download/v1.1/gptree-cli.deb
+sudo dpkg -i gptree-cli.deb
+gtree --help
+```
+
+### 2. Clone and Build
 ```bash
 git clone https://github.com/yourname/gptree-cli
 cd gptree-cli
 make all
 ```
 
-### 2. Windows Setup
+### 3. Windows Setup
 Install `make` via Chocolatey:
 ```powershell
 choco install make
