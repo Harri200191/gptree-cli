@@ -54,29 +54,27 @@ gptree [path] [flags]
 
 ### Example
 ```bash
-./gptree . --chunk --max-tokens 6000 --markdown --ignore .git,node_modules
+gptree . --tree -i .git,.build,debuild
+
+gptree . -i .build,.git,debuild --summarize -o temp.txt --llm-key <your-key> --model claude-3-haiku
+
+gptree . -i .build,.git,debuild --readme -o temp.txt --llm-key <your-key> --model claude-3-haiku
 ```
 
 ### Command Flags
 | Flag | Description |
 |------|-------------|
-| `--ignore` | Comma-separated list of directories to skip |
+| `--ignore-dirs` | Comma-separated list of directories to skip |
+| `--ignore-files` | Comma-separated list of files to skip |
 | `--out` | Output to a specific file |
-| `--markdown` | Wrap output in Markdown for ChatGPT |
 | `--summarize` | Summarize all files using GPT or Claude |
 | `--readme` | Generate a `README.md` from summaries |
 | `--model` | Specify LLM model (e.g., `gpt-4`, `claude-3-sonnet`) |
 | `--tree` | Display directory tree with ■ icons |
+| `--llm-key` | API keys for LLM's (openAI or Anthropic)|
 
 ## Make Commands
 | Command | Purpose |
 |---------|---------|
 | `make all` | Build the CLI to `./build/` |
-| `make clean` | Delete the build directory |
-| `make run` | Run the CLI on the current directory |
-| `make install` | Copy the CLI to `/usr/local/bin` |
-
-## Environment Variables
-| Variable | Purpose |
-|----------|---------|
-| `OPENAI_API_KEY` | API key for GPT models | 
+| `make clean` | Delete the build directory |  
