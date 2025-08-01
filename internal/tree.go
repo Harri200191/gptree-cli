@@ -14,10 +14,10 @@ func ShowTree(root string, ignore []string) error {
 		ignoreSet[dir] = struct{}{}
 	}
 	fmt.Println("📦 Project Structure")
-	return printTree(root, "", ignoreSet, true)
+	return printTree(root, "", ignoreSet)
 }
 
-func printTree(path string, prefix string, ignoreSet map[string]struct{}, isLast bool) error {
+func printTree(path string, prefix string, ignoreSet map[string]struct{}) error {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func printTree(path string, prefix string, ignoreSet map[string]struct{}, isLast
 				newPrefix += "│   "
 			}
 
-			printTree(fullPath, newPrefix, ignoreSet, isLastEntry)
+			printTree(fullPath, newPrefix, ignoreSet)
 		} else {
 			fmt.Println(display)
 		}
