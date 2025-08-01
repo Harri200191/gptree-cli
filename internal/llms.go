@@ -29,6 +29,14 @@ func isClaudeModel(model string) bool {
 	return strings.HasPrefix(model, "claude")
 }
 
+func sendToLLMWithMessages(apiKey, model string, messages []ChatMessage) (string, error) {
+	if isClaudeModel(model) {
+		return sendToClaudeWithMessages(apiKey, model, messages)
+	}
+	return sendToGPTWithMessages(apiKey, model, messages)
+}
+
+
 func sendToGPTWithMessages(apiKey string, model string, messages []ChatMessage) (string, error) {
 	request := ChatRequest{
 		Model:    model,
@@ -68,10 +76,15 @@ func sendToGPTWithMessages(apiKey string, model string, messages []ChatMessage) 
 	return result.Choices[0].Message.Content, nil
 }
 
-
 func sendToClaudeWithMessages(apiKey, model string, messages []ChatMessage) (string, error) {
 	claudeMessages := []map[string]string{}
+	var systemPrompt string
+
 	for _, msg := range messages {
+		if msg.Role == "system" {
+			systemPrompt = msg.Content // Claude needs this separately
+			continue // Don't include "system" role in messages array
+		}
 		claudeMessages = append(claudeMessages, map[string]string{
 			"role":    msg.Role,
 			"content": msg.Content,
@@ -79,9 +92,10 @@ func sendToClaudeWithMessages(apiKey, model string, messages []ChatMessage) (str
 	}
 
 	payload := map[string]interface{}{
-		"model":    model,
-		"messages": claudeMessages,
-		"max_tokens": 1024,
+		"model":       model,
+		"messages":    claudeMessages,
+		"max_tokens":  1024,
+		"system":      systemPrompt, // 🟢 Claude-specific top-level system field
 	}
 
 	body, _ := json.Marshal(payload)
