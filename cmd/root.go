@@ -106,7 +106,7 @@ var rootCmd = &cobra.Command{
 
 		// 📄 Summarize files
 		if summarize {
-			result, err := internal.SummarizeFiles(args[0], ignoreDirs, ignoreFiles, model, llmKey)
+			result, err := internal.SummarizeFiles(prompt, model, llmKey)
 			if err != nil {
 				fmt.Println("Error summarizing files:", err)
 				return
