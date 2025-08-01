@@ -9,11 +9,10 @@ import (
 
 var tokenThreshold = 100 // soft buffer before hitting max
 
-func BuildPrompt(root string, ignoreDirs []string, maxTokens int, chunk bool, ignoreFiles []string) (string, error) {
+func BuildPrompt(root string, ignoreDirs []string, maxTokens int, chunk bool, ignoreFiles []string) ([]string, error) {
 	files, err := WalkDir(root, ignoreDirs, ignoreFiles)
-	
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	filtered := FilterFiles(files, ignoreFiles)
@@ -22,6 +21,7 @@ func BuildPrompt(root string, ignoreDirs []string, maxTokens int, chunk bool, ig
 		return buildChunkedPrompt(filtered, maxTokens)
 	}
 
+	// Single prompt mode
 	var prompt strings.Builder
 	for _, file := range filtered {
 		content, err := readSanitizedFile(file)
@@ -38,12 +38,12 @@ func BuildPrompt(root string, ignoreDirs []string, maxTokens int, chunk bool, ig
 		}
 	}
 
-	return prompt.String(), nil
+	return []string{prompt.String()}, nil
 }
 
-func buildChunkedPrompt(files []string, maxTokens int) (string, error) {
+func buildChunkedPrompt(files []string, maxTokens int) ([]string, error) {
+	var chunks []string
 	var current strings.Builder
-	chunkIndex := 1
 	tokenCount := 0
 
 	for _, file := range files {
@@ -56,13 +56,7 @@ func buildChunkedPrompt(files []string, maxTokens int) (string, error) {
 		newTokens := EstimateTokens(entry)
 
 		if tokenCount+newTokens >= maxTokens-tokenThreshold {
-			err := WriteToFile(fmt.Sprintf("prompt_part_%d.txt", chunkIndex), current.String())
-			if err != nil {
-				return "", err
-			}
-			fmt.Println("Written: prompt_part_", chunkIndex)
-
-			chunkIndex++
+			chunks = append(chunks, current.String())
 			current.Reset()
 			tokenCount = 0
 		}
@@ -72,14 +66,10 @@ func buildChunkedPrompt(files []string, maxTokens int) (string, error) {
 	}
 
 	if current.Len() > 0 {
-		err := WriteToFile(fmt.Sprintf("prompt_part_%d.txt", chunkIndex), current.String())
-		if err != nil {
-			return "", err
-		}
-		fmt.Println("Written: prompt_part_", chunkIndex)
+		chunks = append(chunks, current.String())
 	}
 
-	return fmt.Sprintf("%d prompt chunks written.", chunkIndex), nil
+	return chunks, nil
 }
 
 func readSanitizedFile(path string) (string, error) {
