@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"strings"
 )
 
 // GenerateReadme generates a README.md by sending prompt chunks incrementally to the LLM,
@@ -31,7 +30,7 @@ func GenerateReadme(promptChunks []string, model string, apiKey string) (string,
 		if isClaudeModel(model) {
 			_, err := sendToClaudeWithMessages(apiKey, model, messages)
 			if err != nil {
-				return "", fmt.Errorf("Claude context chunk %d failed: %w", i+1, err)
+				return "", fmt.Errorf("claude context chunk %d failed: %w", i+1, err)
 			}
 		}
 	}
@@ -56,8 +55,4 @@ func GenerateReadme(promptChunks []string, model string, apiKey string) (string,
 		return "", err
 	}
 	return readme, nil
-}
-
-func isClaudeModel(model string) bool {
-	return strings.HasPrefix(model, "claude")
 }

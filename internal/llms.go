@@ -25,6 +25,9 @@ type ChatResponse struct {
     } `json:"choices"`
 }
 
+func isClaudeModel(model string) bool {
+	return strings.HasPrefix(model, "claude")
+}
 
 func sendToLLM(apiKey, prompt, model string) (string, error) {
     if strings.HasPrefix(model, "claude") {
@@ -71,7 +74,7 @@ func sendToClaude(apiKey, prompt, model string) (string, error) {
         return part["text"].(string), nil
     }
 
-    return "", fmt.Errorf("Claude: could not parse response: %s", string(respBody))
+    return "", fmt.Errorf("claude: could not parse response: %s", string(respBody))
 }
 
 
@@ -203,5 +206,5 @@ func sendToClaudeWithMessages(apiKey, model string, messages []ChatMessage) (str
 		return part["text"].(string), nil
 	}
 
-	return "", fmt.Errorf("Claude: could not parse response: %s", string(respBody))
+	return "", fmt.Errorf("claude: could not parse response: %s", string(respBody))
 }
