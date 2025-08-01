@@ -19,6 +19,25 @@ var (
 	llmKey         string
 )
 
+var modelAliases = map[string]string{
+	"claude-3-haiku":  "claude-3-haiku-20240307",
+	"claude-3-sonnet": "claude-3-sonnet-20240229",
+	"claude-3-opus":   "claude-3-opus-20240229",
+	"haiku":           "claude-3-haiku-20240307",
+	"sonnet":          "claude-3-sonnet-20240229",
+	"opus":            "claude-3-opus-20240229",
+	"gpt-3.5": "gpt-3.5-turbo",
+	"gpt-4":   "gpt-4",
+}
+
+func NormalizeModel(model string) string {
+	model = strings.ToLower(model)
+	if resolved, ok := modelAliases[model]; ok {
+		return resolved
+	}
+	return model  
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "gptree [directory]",
 	Short: "Export a directory tree and file contents as a GPT prompt",
@@ -65,6 +84,13 @@ var rootCmd = &cobra.Command{
 
 		// 📘 Generate README
 		if generateReadme {
+			// ensure that model is specified
+			model = NormalizeModel(model)
+			if model == "" {
+				fmt.Println("❌ You must specify a model when using --readme")
+				os.Exit(1)
+			}
+
 			readme, err := internal.GenerateReadme(prompt, model, llmKey)
 			if err != nil {
 				fmt.Println("Error generating README:", err)
@@ -106,6 +132,13 @@ var rootCmd = &cobra.Command{
 
 		// 📄 Summarize files
 		if summarize {
+			// ensure that model is specified
+			model = NormalizeModel(model)
+			if model == "" {
+				fmt.Println("❌ You must specify a model when using --summarize")
+				os.Exit(1)
+			}
+
 			result, err := internal.SummarizeFiles(prompt, model, llmKey)
 			if err != nil {
 				fmt.Println("Error summarizing files:", err)
