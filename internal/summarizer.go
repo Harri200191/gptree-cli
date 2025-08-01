@@ -1,40 +1,47 @@
 package internal
 
 import (
-    "fmt"
-    "os"
-    "strings"
+	"fmt"
 )
 
+func SummarizeFiles(prompts []string, model string, apiKey string) (string, error) {
+	if apiKey == "" {
+		return "", fmt.Errorf("LLM API key is required")
+	}
 
-func SummarizeFiles(root string, ignoreDirs []string, ignoreFiles []string, model string, apiKey string) (string, error) {
-    if apiKey == "" {
-        return "", fmt.Errorf("OPENAI_API_KEY not set in environment")
-    }
+	messages := []ChatMessage{
+		{
+			Role:    "system",
+			Content: "You are a helpful assistant that summarizes codebases. You'll receive codebase chunks in parts. At the end, you'll be asked to summarize what each file does.",
+		},
+	}
 
-    files, err := WalkDir(root, ignoreDirs, ignoreFiles)
-    if err != nil {
-        return "", err
-    }
+	for _, chunk := range prompts {
+		messages = append(messages, ChatMessage{
+			Role:    "user",
+			Content: fmt.Sprintf("Here is the next code chunk:\n\n%s", chunk),
+		})
+	}
 
-    var summaries strings.Builder
-    summaries.WriteString("## File Summaries\n\n")
+	// Final prompt to generate the summary
+	messages = append(messages, ChatMessage{
+		Role:    "user",
+		Content: "Now summarize what each file in the codebase does in 1-3 sentences per file.",
+	})
 
-    for _, file := range files {
-        contentBytes, err := os.ReadFile(file)
-        if err != nil {
-            continue
-        }
-        content := string(contentBytes)
-        prompt := fmt.Sprintf("Summarize what this file does in 1-3 sentences:\n\n%s", content)
+	// Send to LLM using unified method
+	var response string
+	var sendErr error
 
-        summary, err := sendToGPT(apiKey, prompt, model)
-        if err != nil {
-            summary = fmt.Sprintf("❌ Error summarizing %s: %v\n", file, err)
-        }
+	if isClaudeModel(model) {
+		response, sendErr = sendToClaudeWithMessages(apiKey, model, messages)
+	} else {
+		response, sendErr = sendToGPTWithMessages(apiKey, model, messages)
+	}
 
-        summaries.WriteString(fmt.Sprintf("### %s\n%s\n\n", file, summary))
-    }
+	if sendErr != nil {
+		return "", sendErr
+	}
 
-    return summaries.String(), nil
+	return response, nil
 }
