@@ -7,9 +7,11 @@
 *.dll
 *.so
 *.dylib
+*.sh
 
 # Test binary, built with `go test -c`
 *.test
+.gomodcache
 
 # Code coverage profiles and other test artifacts
 *.out
@@ -19,6 +21,7 @@ profile.cov
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+utils
 
 # Go workspace file
 go.work
@@ -38,5 +41,4 @@ debuild
 gptree
 .build
 usr
-DEBIAN
 *.deb
