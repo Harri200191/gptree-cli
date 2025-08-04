@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+export GOCACHE := $(CURDIR)/.gocache
+export DEB_BUILD_OPTIONS = nostrip nodwz
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	GOMODCACHE=$(CURDIR)/.gomodcache GOFLAGS="-mod=vendor" go build -o gptree ./main.go
+
+override_dh_auto_install:
+	dh_auto_install --destdir=$(CURDIR)/debian/gptree
+	install -d $(CURDIR)/debian/gptree/usr/bin
+	install -m 0755 gptree $(CURDIR)/debian/gptree/usr/bin/gptree

@@ -1,0 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: gptree
+Source: https://github.com/Harri200191/gptree-cli
+
+Files: *
+Copyright: 2025 Haris Rehman
+License: MIT
+
+License: MIT
+ Permission is hereby granted...
+ <Include full MIT license text or a reference to /usr/share/common-licenses/MIT>

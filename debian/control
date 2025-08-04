@@ -1,0 +1,15 @@
+Source: gptree
+Section: utils
+Priority: optional
+Maintainer: Haris Rehman <harisrehmanchugtai@gmail.com>
+Build-Depends: debhelper (>= 12), golang-any
+Standards-Version: 4.5.0
+Homepage: https://github.com/Harri200191/gptree-cli
+
+Package: gptree
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: GPT-friendly CLI for summarizing directory trees and file content
+ GPTree is a CLI utility that converts directory structures and file contents
+ into GPT-friendly prompts or summaries. Useful for context-aware LLM usage.
+ 
