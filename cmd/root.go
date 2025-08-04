@@ -174,7 +174,7 @@ var rootCmd = &cobra.Command{
 				return
 			}
 
-			fmt.Printf("✅ %s written with GPT-generated descriptions.\n", outputPath)
+			fmt.Printf("✅ %s written with LLM-generated descriptions.\n", outputPath)
 		}
 
 	},
